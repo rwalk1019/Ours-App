@@ -1,0 +1,17 @@
+{
+  "name": "@ours/server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ours/domain": "0.1.0",
+    "@electric-sql/pglite": "^0.3.11",
+    "@simplewebauthn/server": "^13.2.2"
+  },
+  "devDependencies": {
+    "cbor-x": "^1.6.0"
+  }
+}

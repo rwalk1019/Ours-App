@@ -1,0 +1,30 @@
+{
+  "name": "ours",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/domain/tsconfig.json --noEmit && tsc -p packages/server/tsconfig.json --noEmit && tsc -p apps/web/tsconfig.json --noEmit",
+    "build": "npm run typecheck && npm run build -w @ours/web && npm run build:function",
+    "build:function": "node scripts/bundle-function.mjs",
+    "setup-code": "tsx scripts/issue-setup-code.ts",
+    "issue-import-token": "tsx scripts/issue-import-token.ts",
+    "issue-report-token": "tsx scripts/issue-report-token.ts",
+    "import-snapshot": "tsx scripts/import-snapshot.ts",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "esbuild": "^0.25.5",
+    "playwright": "^1.56.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

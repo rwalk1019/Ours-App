@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { min-height: 100%; }
+body { margin: 0; background: #e7d5c3; }
+button, input, select { font: inherit; }
+:focus-visible { outline: 2px solid #8d3f32; outline-offset: 2px; }

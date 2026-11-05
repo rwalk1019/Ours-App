@@ -1,0 +1,29 @@
+{
+  "format": "ours.snapshot",
+  "version": 1,
+  "balancesAsOf": "2026-11-03T18:00:00.000Z",
+  "accounts": [
+    { "externalId": "sample-checking", "label": "Sample Checking", "kind": "depository", "currency": "USD" },
+    { "externalId": "sample-credit", "label": "Sample Credit", "kind": "credit", "currency": "USD" }
+  ],
+  "balances": [
+    { "accountExternalId": "sample-checking", "asOf": "2026-11-03T18:00:00.000Z", "assetCents": 250000, "owedCents": 0, "availableCents": 240000, "note": null },
+    { "accountExternalId": "sample-credit", "asOf": "2026-11-03T18:00:00.000Z", "assetCents": 0, "owedCents": 32000, "availableCents": null, "note": null }
+  ],
+  "transactions": [
+    {
+      "externalId": "sample-payroll",
+      "accountExternalId": "sample-checking",
+      "postedOn": "2026-11-03",
+      "postedAt": "2026-11-03T15:00:00.000Z",
+      "amountCents": 240000,
+      "direction": "inflow",
+      "pending": false,
+      "voided": false,
+      "merchantLabel": "Sample Payroll",
+      "description": null,
+      "providerKind": "income",
+      "replacesExternalId": null
+    }
+  ]
+}
