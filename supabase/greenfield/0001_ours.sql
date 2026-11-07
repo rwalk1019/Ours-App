@@ -1,4 +1,17 @@
--- Ours household schema.
+-- GREENFIELD DRAFT ONLY. Not the live Ours project.
+-- If any live table is already present this script stops before creating or changing anything.
+do $$
+begin
+  if to_regclass('public.ours_settings') is not null
+     or to_regclass('public.ours_snapshots') is not null
+     or to_regclass('public.ours_passkey_credentials') is not null
+     or to_regclass('public.ours_device_setup_codes') is not null
+     or to_regclass('public.ours_backup_codes') is not null then
+    raise exception 'greenfield schema refused: existing Ours tables were left untouched';
+  end if;
+end $$;
+
+-- Draft-only household schema.
 -- Table names are exclusively ours_*.
 -- Row level security is forced and no policies are created, so anon and authenticated
 -- roles cannot read or write these tables through the Data API.

@@ -1,27 +1,22 @@
 import { createServer, type IncomingMessage } from 'node:http';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { handle } from './app.js';
-import { loadConfigFromEnv } from './config.js';
-import { randomBytes, base64url } from './crypto.js';
-import { migrate, openDatabase } from './db.js';
+import { handleLiveRequest } from './live/http.js';
+import { applyLiveFixture } from './live/apply.js';
+import { openDatabase } from './db.js';
 
 if (process.env.OURS_ENV === 'production') {
-  console.error('This local server is for development. Production requests belong on the ours-api edge function.');
+  console.error('This local server is a fixture. The live project already serves ours-auth and must not be replaced from here.');
   process.exit(1);
 }
 
-const env: Record<string, string | undefined> = { ...process.env, OURS_ENV: 'development' };
-if (!env.OURS_CODE_PEPPER) {
-  mkdirSync('.data', { recursive: true });
-  const pepperPath = '.data/pepper';
-  if (!existsSync(pepperPath)) writeFileSync(pepperPath, base64url(randomBytes(32)), { mode: 0o600 });
-  env.OURS_CODE_PEPPER = readFileSync(pepperPath, 'utf8').trim();
-}
-
-const config = loadConfigFromEnv(env);
+const origins = (process.env.OURS_ORIGINS ?? 'http://localhost:41773,http://127.0.0.1:41773')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const rpId = process.env.OURS_RP_ID?.trim() || 'localhost';
 const port = Number(process.env.OURS_API_PORT ?? 41774);
-const db = await openDatabase('.data/pglite');
-await migrate(db);
+const db = await openDatabase(process.env.OURS_DATA_DIR ?? '.data/live', { pgcrypto: true });
+const created = await applyLiveFixture(db);
+if (created === 'existing') console.log('Using the existing local Ours tables. Nothing was dropped.');
 
 function readBody(req: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -45,19 +40,16 @@ const server = createServer(async (req, res) => {
       headers,
       body: body && body.length > 0 ? new Uint8Array(body) : undefined,
     });
-    const response = await handle(request, { db, config, now: () => new Date() });
+    const response = await handleLiveRequest(request, db, { rpId, origins }, new Date());
     res.statusCode = response.status;
-    response.headers.forEach((value, key) => {
-      if (key === 'set-cookie') res.setHeader('Set-Cookie', value);
-      else res.setHeader(key, value);
-    });
+    response.headers.forEach((value, key) => res.setHeader(key, value));
     res.end(Buffer.from(await response.arrayBuffer()));
   } catch {
     res.statusCode = 500;
-    res.end('{"error":"server_error"}');
+    res.end('{"error":"server error"}');
   }
 });
 
 server.listen(port, '127.0.0.1', () => {
-  console.log(`Ours API http://127.0.0.1:${port}`);
+  console.log(`Ours local contract http://127.0.0.1:${port}`);
 });

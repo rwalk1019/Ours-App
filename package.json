@@ -14,7 +14,8 @@
     "build": "npm run typecheck && npm run build -w @ours/web && npm run build:function",
     "build:function": "node scripts/bundle-function.mjs",
     "setup-code": "tsx scripts/issue-setup-code.ts",
-    "issue-import-token": "tsx scripts/issue-import-token.ts",
+    "issue-import-token": "tsx scripts/issue-uploader-key.ts",
+    "issue-uploader-key": "tsx scripts/issue-uploader-key.ts",
     "issue-report-token": "tsx scripts/issue-report-token.ts",
     "import-snapshot": "tsx scripts/import-snapshot.ts",
     "e2e": "playwright test"

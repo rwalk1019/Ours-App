@@ -2,8 +2,17 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 
-const apiBase = process.env.VITE_API_BASE ?? '';
-const connectSrc = apiBase ? `'self' ${new URL(apiBase).origin}` : "'self'";
+function originOf(value: string | undefined): string | null {
+  if (!value || value.startsWith('/')) return null;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return null;
+  }
+}
+const connectSrc = ["'self'", originOf(process.env.VITE_OURS_AUTH_URL), originOf(process.env.VITE_SUPABASE_URL)]
+  .filter((value): value is string => Boolean(value))
+  .join(' ');
 const csp = [
   "default-src 'self'",
   "script-src 'self'",
@@ -40,7 +49,10 @@ export default defineConfig({
   server: {
     host: '127.0.0.1',
     port: 41773,
-    proxy: { '/api': 'http://127.0.0.1:41774' },
+    proxy: {
+      '/functions': 'http://127.0.0.1:41774',
+      '/rest': 'http://127.0.0.1:41774',
+    },
     headers: {
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'no-referrer',

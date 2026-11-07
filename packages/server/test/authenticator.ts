@@ -87,13 +87,13 @@ export class SoftwareAuthenticator {
     };
   }
 
-  async authenticate(options: PublicKeyCredentialRequestOptionsJSON, origin: string, counter?: number): Promise<AuthenticationResponseJSON> {
+  async authenticate(options: PublicKeyCredentialRequestOptionsJSON, origin: string, counter?: number, userVerified = true): Promise<AuthenticationResponseJSON> {
     if (!this.keyPair) throw new Error('authenticator_not_registered');
     this.counter = counter ?? this.counter + 1;
     const rpIdHash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(options.rpId ?? this.rpId)));
     const count = new Uint8Array(4);
     new DataView(count.buffer).setUint32(0, this.counter);
-    const authData = concat([rpIdHash, Uint8Array.of(0x05), count]);
+    const authData = concat([rpIdHash, Uint8Array.of(userVerified ? 0x05 : 0x01), count]);
     const clientDataJSON = new TextEncoder().encode(
       JSON.stringify({ type: 'webauthn.get', challenge: options.challenge, origin, crossOrigin: false }),
     );

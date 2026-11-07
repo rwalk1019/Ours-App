@@ -1,5 +1,2 @@
-import { issueImportToken } from '../packages/server/src/repository.ts';
-import { openLocal } from './local-db.ts';
-
-const { db } = await openLocal();
-process.stdout.write(`${await issueImportToken(db)}\n`);
+process.stderr.write('The live uploader credential is a hashed settings key. For the local fixture only, run npm run issue-uploader-key.\n');
+process.exit(1);

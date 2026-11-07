@@ -1,6 +1,8 @@
 # Architecture
 
-Ours is a static web app plus one authenticated API. The browser never queries database tables. Financial reads and writes go through the API, which checks a passkey session. The import and scheduled-report calls use separate bearer tokens that are not the session cookie.
+The live household backend is `ours-auth` plus the `ours_*` RPCs described in `docs/LIVE_BACKEND.md`. This app calls that contract. The session token stays in memory. Custom items, fix rules, and saved settings are written only through those RPCs, so a snapshot upload does not remove them.
+
+An older greenfield schema remains under `supabase/greenfield` for its own tests. It is not the deployment path.
 
 ```text
 phone (static app)

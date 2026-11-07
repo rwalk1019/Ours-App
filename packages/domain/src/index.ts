@@ -7,3 +7,4 @@ export * from './origin.js';
 export * from './snapshot.js';
 export * from './dashboard.js';
 export * from './email.js';
+export * from './ownerSettings.js';

@@ -1,4 +1,2 @@
-project_id = "ours"
-
-[functions.ours-api]
-verify_jwt = false
+# This draft does not deploy a function. The live project already runs ours-auth.
+project_id = "do-not-link-the-live-ours-project"
