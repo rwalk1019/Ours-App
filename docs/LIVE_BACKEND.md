@@ -47,6 +47,6 @@ GitHub Pages is the public origin: `https://rwalk1019.github.io/ours-app/`. The 
 
 - `VITE_OURS_AUTH_URL` = `https://xalpxmeahefyocwokkyb.supabase.co/functions/v1/ours-auth`
 - `VITE_OURS_RPC_BASE` = `https://xalpxmeahefyocwokkyb.supabase.co/rest/v1/rpc`
-- `VITE_SUPABASE_ANON_KEY` = the anon key, from the Actions variable, not the service role
+- `VITE_SUPABASE_ANON_KEY` = the public publishable/anon key, set in the Pages workflow, not the service role
 
 `connect-src` is `'self'` plus `https://xalpxmeahefyocwokkyb.supabase.co`. Applying `supabase/additive/ours_settings_presence.sql` is what exposes the saved monthly tithing keys and lets the screen tell a saved percent from the 10% fallback.
