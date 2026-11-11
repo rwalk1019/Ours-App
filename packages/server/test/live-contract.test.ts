@@ -29,6 +29,10 @@ describe('live contract', () => {
       weeklyTarget: null,
       tithingPercent: null,
       tithingCategory: null,
+      tithingPeriod: null,
+      incomeSources: null,
+      paymentMatches: null,
+      filtersReadable: true,
       confirmationAvailable: false,
     });
     expect(confirmedOwnerSettings({ weekly_target: null, tithing_percent: null, tithing_category: null }).tithingPercent).toBeNull();
@@ -36,8 +40,32 @@ describe('live contract', () => {
       weeklyTarget: 80,
       tithingPercent: 8,
       tithingCategory: 'Giving',
+      tithingPeriod: null,
     });
-    const unknown = ownerMoney({ now: new Date('2026-11-05T18:00:00Z'), tithingPercent: null, weeklyTarget: null, transactions: null, rules: [] });
+    const savedMonth = confirmedOwnerSettings({
+      tithing_percent: 10,
+      tithing_period: 'monthly',
+      tithing_income_sources: ['Payroll'],
+      tithing_payment_match: 'Church',
+    });
+    expect(savedMonth).toMatchObject({
+      tithingPercent: 10,
+      tithingPeriod: 'month',
+      incomeSources: ['Payroll'],
+      paymentMatches: ['Church'],
+      weeklyTarget: null,
+    });
+    const unknown = ownerMoney({
+      now: new Date('2026-11-05T18:00:00Z'),
+      tithingPercent: null,
+      tithingPeriod: null,
+      incomeSources: null,
+      paymentMatches: null,
+      filtersReadable: true,
+      weeklyTarget: null,
+      transactions: null,
+      rules: [],
+    });
     expect(unknown.tithing.label).toBe('Set a percent');
     expect(unknown.weekNetSpendCents).toBeNull();
   });
@@ -50,15 +78,49 @@ describe('live contract', () => {
       accounts: [{ label: 'Sample Checking' }],
       transactions: [{ externalId: 'pay', postedOn: '2026-11-04', amountCents: 240000, direction: 'inflow', providerKind: 'income', merchantLabel: 'Sample Payroll' }],
     });
-    const money = ownerMoney({
+    const baseMoney = {
       now: new Date('2026-11-05T18:00:00Z'),
       tithingPercent: 10,
-      weeklyTarget: 80,
+      weeklyTarget: null,
       transactions: recognized.recognizedTransactions,
       rules: [],
+      filtersReadable: true,
+    };
+    const money = ownerMoney({
+      ...baseMoney,
+      tithingPeriod: 'month',
+      incomeSources: ['Payroll'],
+      paymentMatches: ['Church'],
     });
     expect(money.tithing.label).toBe('Still to pay $240.00');
     expect(money.weekNetSpendCents).toBe(0);
+    const otherMonth = readLooseSnapshot({
+      transactions: [
+        { externalId: 'old', postedOn: '2026-10-31', amountCents: 240000, direction: 'inflow', providerKind: 'income', merchantLabel: 'Sample Payroll' },
+      ],
+    });
+    expect(ownerMoney({
+      ...baseMoney,
+      tithingPeriod: 'month',
+      incomeSources: ['Payroll'],
+      paymentMatches: ['Church'],
+      transactions: otherMonth.recognizedTransactions,
+    }).tithing.label).toBe('Nothing due yet');
+    const paid = readLooseSnapshot({
+      transactions: [
+        { externalId: 'pay', postedOn: '2026-11-04', amountCents: 240000, direction: 'inflow', providerKind: 'income', merchantLabel: 'Sample Payroll' },
+        { externalId: 'tithe', postedOn: '2026-11-06', amountCents: 24000, direction: 'outflow', providerKind: 'expense', merchantLabel: 'Church' },
+      ],
+    });
+    expect(ownerMoney({ ...baseMoney, tithingPeriod: 'month', incomeSources: ['Payroll'], paymentMatches: ['Church'], transactions: paid.recognizedTransactions }).tithing.label).toBe('Paid');
+    const covered = readLooseSnapshot({
+      transactions: [
+        { externalId: 'pay', postedOn: '2026-11-04', amountCents: 240000, direction: 'inflow', providerKind: 'income', merchantLabel: 'Sample Payroll' },
+        { externalId: 'tithe', postedOn: '2026-11-06', amountCents: 30000, direction: 'outflow', providerKind: 'expense', merchantLabel: 'Church' },
+      ],
+    });
+    expect(ownerMoney({ ...baseMoney, tithingPeriod: 'month', incomeSources: ['Payroll'], paymentMatches: ['Church'], transactions: covered.recognizedTransactions }).tithing.label).toBe('Covered');
+    expect(ownerMoney({ ...baseMoney, tithingPeriod: null, incomeSources: null, paymentMatches: null }).tithing.label).toBe('Monthly period isn’t in the response yet.');
   });
 
   it('keeps custom data, retains five snapshots, and closes only open refresh requests', async () => {
@@ -93,9 +155,22 @@ describe('live contract', () => {
     expect(done.rows[0]?.note).toMatch(/^snapshot /);
 
     await db.query(`select ours_save_settings($1, '{"tithing_percent":8}'::jsonb)`, [token]);
-    const saved = await db.query<{ result: { tithing_percent: number; weekly_target: unknown } }>(`select ours_settings_presence($1) as result`, [token]);
+    await db.query(
+      `insert into ours_settings(key, value) values
+        ('tithing_period', '"monthly"'::jsonb),
+        ('tithing_income_sources', '["Payroll"]'::jsonb),
+        ('tithing_payment_match', '"Church"'::jsonb)`,
+    );
+    const saved = await db.query<{ result: { tithing_percent: number; weekly_target: unknown; tithing_period: string; tithing_income_sources: string[]; tithing_payment_match: string } }>(`select ours_settings_presence($1) as result`, [token]);
     expect(saved.rows[0]?.result.tithing_percent).toBe(8);
     expect(saved.rows[0]?.result.weekly_target).toBeNull();
+    expect(saved.rows[0]?.result.tithing_period).toBe('monthly');
+    expect(saved.rows[0]?.result.tithing_income_sources).toEqual(['Payroll']);
+    expect(saved.rows[0]?.result.tithing_payment_match).toBe('Church');
+    const exposed = await db.query<{ result: { settings: { tithing_period: string; weekly_target: number; tithing_percent: number } } }>(`select ours_get_state($1) as result`, [token]);
+    expect(exposed.rows[0]?.result.settings.tithing_period).toBe('monthly');
+    expect(exposed.rows[0]?.result.settings.tithing_percent).toBe(8);
+    expect(exposed.rows[0]?.result.settings.weekly_target).toBe(150);
   });
 
   it('requires a session for destructive backup replacement and cleans expired sessions on sign-out', async () => {
@@ -136,6 +211,18 @@ describe('live contract', () => {
     const authStart = await handleAuthAction(db, config, { action: 'auth_options' }, ORIGIN, now) as { challengeId: string; options: Parameters<SoftwareAuthenticator['authenticate']>[0] };
     const unverified = await authenticator.authenticate(authStart.options, ORIGIN, undefined, false);
     await expect(handleAuthAction(db, config, { action: 'auth_verify', challengeId: authStart.challengeId, credential: unverified }, ORIGIN, now)).rejects.toThrow(/Passkey check failed/);
+    const probe = await handleAuthAction(db, config, { action: 'auth_options' }, ORIGIN, now) as { challengeId: string };
+    const stored = await db.query<{ id: string }>(`select id from ours_passkey_credentials`);
+    const leaked = await handleLiveRequest(new Request('http://127.0.0.1/functions/v1/ours-auth', {
+      method: 'POST',
+      headers: { origin: ORIGIN, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        action: 'auth_verify',
+        challengeId: probe.challengeId,
+        credential: { id: stored.rows[0]?.id, type: 'public-key', response: { clientDataJSON: 'aa', authenticatorData: 'bb', signature: 'cc' } },
+      }),
+    }), db, config, now);
+    expect(await leaked.json()).toEqual({ error: 'Passkey check failed.' });
     const again = await handleAuthAction(db, config, { action: 'auth_options' }, ORIGIN, now) as { challengeId: string; options: Parameters<SoftwareAuthenticator['authenticate']>[0] };
     const assertion = await authenticator.authenticate(again.options, ORIGIN);
     const signedIn = await handleAuthAction(db, config, { action: 'auth_verify', challengeId: again.challengeId, credential: assertion }, ORIGIN, now) as { ok: boolean };
@@ -168,7 +255,14 @@ describe('live contract', () => {
       body: JSON.stringify({ p_token: 'x'.repeat(40) }),
     }), db, config, new Date());
     expect(denied.headers.get('access-control-allow-origin')).toBeNull();
-    expect(denied.status).toBe(401);
+    expect(denied.headers.get('access-control-allow-origin')).not.toBe(ORIGIN);
+    expect(denied.status).toBe(403);
+    const evilPreflight = await handleLiveRequest(new Request('http://127.0.0.1/functions/v1/ours-auth', {
+      method: 'OPTIONS',
+      headers: { origin: 'https://evil.example' },
+    }), db, config, new Date());
+    expect(evilPreflight.status).toBe(403);
+    expect(evilPreflight.headers.get('access-control-allow-origin')).toBeNull();
     const body = await denied.json();
     expect(JSON.stringify(body)).not.toMatch(/balance|merchant|Sample/);
     const preflight = await handleLiveRequest(new Request('http://127.0.0.1/functions/v1/ours-auth', {
@@ -191,5 +285,11 @@ describe('deployed function review notes stay out of the client bundle source', 
     }
     expect(sql).toMatch(/set search_path = public, pg_temp/);
     expect(sql).toMatch(/revoke all on function public\.ours__require_session/);
+    const edge = readFileSync(new URL('../../../supabase/functions/ours-auth/index.ts', import.meta.url), 'utf8');
+    expect(edge).toMatch(/Passkey check failed\./);
+    expect(edge).toMatch(/rwalk1019\.github\.io/);
+    expect(edge).toMatch(/https:\/\/rwalk1019\.github\.io/);
+    expect(edge).not.toMatch(/origins\[0\]|\$\{[^}]*message|eyJ|postgres:\/\/|service_role|BEGIN PRIVATE/);
+    expect(edge).not.toMatch(/Passkey check failed\. \$\{/);
   });
 });

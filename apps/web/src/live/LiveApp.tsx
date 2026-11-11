@@ -90,6 +90,10 @@ export function LiveApp({ onDemo }: { onDemo: () => void }) {
   const money = ownerMoney({
     now: new Date(state.server_time),
     tithingPercent: settings.tithingPercent,
+    tithingPeriod: settings.tithingPeriod,
+    incomeSources: settings.incomeSources,
+    paymentMatches: settings.paymentMatches,
+    filtersReadable: settings.filtersReadable,
     weeklyTarget: settings.weeklyTarget,
     transactions: loose.recognizedTransactions,
     rules: state.fix_rules.map((rule) => ({ match: rule.match, category: rule.category })),
@@ -115,13 +119,15 @@ export function LiveApp({ onDemo }: { onDemo: () => void }) {
           ? `Balances as of ${formatDenverTimestamp(state.snapshot.as_of)}. Imported ${state.snapshot.uploaded_at ? formatDenverTimestamp(state.snapshot.uploaded_at) : 'earlier'}.`
           : 'No bank snapshot yet. Nothing here is bank-verified.'}
       </p>
-      <section className={`rounded-[28px] p-5 ${settings.tithingPercent == null ? 'bg-white' : 'bg-clay text-[#fffaf3]'}`}>
-        <p className="text-xs uppercase tracking-[0.16em]">Tithing</p>
+      <section className={`rounded-[28px] p-5 ${settings.tithingPeriod === 'month' ? 'bg-clay text-[#fffaf3]' : 'bg-white'}`}>
+        <p className="text-xs uppercase tracking-[0.16em]">Tithing{settings.tithingPeriod === 'month' ? ' · this month' : ''}</p>
         <p className="font-display mt-3 text-4xl">{money.tithing.label}</p>
         {settings.tithingPercent == null ? (
           <p className="mt-2 text-sm">No saved percent. A server fallback is not your setting until you save one.</p>
+        ) : settings.tithingPeriod === 'month' ? (
+          <p className="mt-2 text-sm">{settings.tithingPercent}% of this month’s matching income. Status is Paid, Still to pay, Covered, or Nothing due yet.</p>
         ) : (
-          <p className="mt-2 text-sm">{settings.tithingPercent}% saved.</p>
+          <p className="mt-2 text-sm">{settings.tithingPercent}% is saved. The month stays hidden until the settings response includes it.</p>
         )}
         {!settings.confirmationAvailable ? <p className="mt-2 text-sm">Saved and unsaved settings cannot be told apart until the presence check is installed. Nothing is treated as confirmed.</p> : null}
       </section>
@@ -171,16 +177,13 @@ export function LiveApp({ onDemo }: { onDemo: () => void }) {
 function normalizePresence(value: unknown): SettingsPresence {
   const record = value && typeof value === 'object' ? value as Record<string, unknown> : {};
   return {
-    weekly_target: jsonNumber(record.weekly_target),
-    tithing_percent: jsonNumber(record.tithing_percent),
-    tithing_category: typeof record.tithing_category === 'string' ? record.tithing_category : null,
+    weekly_target: record.weekly_target ?? null,
+    tithing_percent: record.tithing_percent ?? null,
+    tithing_category: record.tithing_category ?? null,
+    tithing_period: record.tithing_period ?? null,
+    tithing_income_sources: record.tithing_income_sources ?? null,
+    tithing_payment_match: record.tithing_payment_match ?? null,
   };
-}
-
-function jsonNumber(value: unknown): number | null {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value);
-  return null;
 }
 
 function LockedLive({ busy, message, onDemo, onUnlock, onBackup, onSetup }: {

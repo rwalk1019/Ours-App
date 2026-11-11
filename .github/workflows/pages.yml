@@ -1,0 +1,54 @@
+name: Deploy Ours to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build the static site
+        env:
+          VITE_BASE: /ours-app/
+          VITE_OURS_AUTH_URL: https://xalpxmeahefyocwokkyb.supabase.co/functions/v1/ours-auth
+          VITE_OURS_RPC_BASE: https://xalpxmeahefyocwokkyb.supabase.co/rest/v1/rpc
+          # Public anon key. Set repository variable VITE_SUPABASE_ANON_KEY.
+          # Do not put a service-role key here.
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "VITE_SUPABASE_ANON_KEY is unset. Baking REPLACE_WITH_SUPABASE_ANON_KEY."
+            export VITE_SUPABASE_ANON_KEY=REPLACE_WITH_SUPABASE_ANON_KEY
+          fi
+          npm run build -w @ours/web
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

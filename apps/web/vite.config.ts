@@ -2,17 +2,7 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { defineConfig } from 'vite';
 
-function originOf(value: string | undefined): string | null {
-  if (!value || value.startsWith('/')) return null;
-  try {
-    return new URL(value).origin;
-  } catch {
-    return null;
-  }
-}
-const connectSrc = ["'self'", originOf(process.env.VITE_OURS_AUTH_URL), originOf(process.env.VITE_SUPABASE_URL)]
-  .filter((value): value is string => Boolean(value))
-  .join(' ');
+const connectSrc = "'self' https://xalpxmeahefyocwokkyb.supabase.co";
 const csp = [
   "default-src 'self'",
   "script-src 'self'",
@@ -34,7 +24,10 @@ const headers = {
   'Cache-Control': 'no-store',
 };
 
+const base = process.env.VITE_BASE || '/';
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     {

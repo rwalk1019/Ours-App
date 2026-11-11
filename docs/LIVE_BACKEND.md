@@ -43,10 +43,10 @@ These are observations from the sanitized source. This draft does not change the
 
 ## Still required to host the static app
 
-The deployed `OURS_RP_ID` and `OURS_ORIGINS` were redacted and were not read. Do not guess them. Build the web app with:
+GitHub Pages is the public origin: `https://rwalk1019.github.io/ours-app/`. The passkey RP ID is `rwalk1019.github.io` and the allowed origin is `https://rwalk1019.github.io`. Deploy `supabase/functions/ours-auth/index.ts` yourself with those values. The workflow builds with:
 
-- `VITE_OURS_AUTH_URL` = the `ours-auth` function URL
-- `VITE_OURS_RPC_BASE` = `https://<project>.supabase.co/rest/v1/rpc`
-- `VITE_SUPABASE_ANON_KEY` = the anon key, not the service role
+- `VITE_OURS_AUTH_URL` = `https://xalpxmeahefyocwokkyb.supabase.co/functions/v1/ours-auth`
+- `VITE_OURS_RPC_BASE` = `https://xalpxmeahefyocwokkyb.supabase.co/rest/v1/rpc`
+- `VITE_SUPABASE_ANON_KEY` = the anon key, from the Actions variable, not the service role
 
-The page origin must be one of the function's configured origins, or passkey checks fail. Serve the headers in `deploy/recommended-headers.txt`, and include the Supabase origin in `connect-src`. Passkeys need HTTPS on that origin. Applying `ours_settings_presence` is what lets the screen tell a saved percent from the 10% fallback.
+`connect-src` is `'self'` plus `https://xalpxmeahefyocwokkyb.supabase.co`. Applying `supabase/additive/ours_settings_presence.sql` is what exposes the saved monthly tithing keys and lets the screen tell a saved percent from the 10% fallback.

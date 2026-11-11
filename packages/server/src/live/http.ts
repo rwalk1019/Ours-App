@@ -25,6 +25,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Reflect only an exact allowed origin. A missing or foreign Origin gets no allow header. */
 export function liveCors(request: Request, origins: string[]): Headers {
   const headers = new Headers({
     'access-control-allow-headers': 'content-type, apikey, authorization, x-client-info',
@@ -37,6 +38,11 @@ export function liveCors(request: Request, origins: string[]): Headers {
   return headers;
 }
 
+function originAllowed(request: Request, origins: string[]): boolean {
+  const origin = request.headers.get('origin');
+  return !origin || origins.includes(origin);
+}
+
 function json(request: Request, origins: string[], status: number, body: unknown): Response {
   const headers = liveCors(request, origins);
   headers.set('content-type', 'application/json; charset=utf-8');
@@ -45,6 +51,9 @@ function json(request: Request, origins: string[], status: number, body: unknown
 
 export async function handleLiveRequest(request: Request, db: Db, config: LiveAuthConfig, now: Date): Promise<Response> {
   const url = new URL(request.url);
+  if (!originAllowed(request, config.origins)) {
+    return json(request, config.origins, 403, { error: 'This site is not allowed to sign in.' });
+  }
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: liveCors(request, config.origins) });
   if (request.method !== 'POST') return json(request, config.origins, 405, { error: 'POST only' });
   const text = await request.text();
