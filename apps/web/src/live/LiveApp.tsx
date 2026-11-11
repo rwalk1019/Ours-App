@@ -4,6 +4,7 @@ import { createPasskey, usePasskey } from '@/passkey';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { looksLikeSetupCode } from './codes';
 import { authAction, currentSession, rememberSession, rpc } from './client';
 
 type LiveState = {
@@ -202,13 +203,26 @@ function LockedLive({ busy, message, onDemo, onUnlock, onBackup, onSetup }: {
       <div>
         <p className="text-xs uppercase tracking-[0.22em] text-[#8a7363]">Household</p>
         <h1 className="font-display mt-3 text-6xl">Ours</h1>
-        <p className="mt-4 max-w-xs text-lg text-[#5c4d40]">Locked until this device is recognized. The phone uses a passkey where it offers one.</p>
+        <p className="mt-4 max-w-xs text-lg text-[#5c4d40]">Locked until this device is recognized. The first time, use your setup code. After that, the phone can unlock with a passkey.</p>
       </div>
       <div className="space-y-3">
         {message ? <p className="rounded-2xl bg-[#f3e2d4] px-4 py-3 text-sm">{message}</p> : null}
-        {mode === 'unlock' ? <Button className="w-full" disabled={busy} onClick={onUnlock}>Unlock</Button> : null}
+        {mode === 'unlock' ? (
+          <>
+            <Button className="w-full" disabled={busy} onClick={onUnlock}>Unlock</Button>
+            <Button className="w-full" variant="outline" type="button" disabled={busy} onClick={() => setMode('setup')}>Set up this device</Button>
+          </>
+        ) : null}
         {mode === 'backup' ? (
-          <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); onBackup(code); }}>
+          <form className="space-y-3" onSubmit={(event) => {
+            event.preventDefault();
+            if (looksLikeSetupCode(code)) {
+              setMode('setup');
+              onSetup(code, deviceName);
+              return;
+            }
+            onBackup(code);
+          }}>
             <label htmlFor="backup">Backup code</label>
             <Input id="backup" value={code} onChange={(event) => setCode(event.target.value)} autoComplete="one-time-code" />
             <Button className="w-full" type="submit" disabled={busy}>Sign in</Button>
@@ -222,8 +236,8 @@ function LockedLive({ busy, message, onDemo, onUnlock, onBackup, onSetup }: {
             <Button className="w-full" type="submit" disabled={busy}>Create a passkey</Button>
           </form>
         ) : null}
-        <button className="w-full text-sm text-[#6d5c4d]" type="button" onClick={() => setMode(mode === 'backup' ? 'unlock' : 'backup')}>{mode === 'backup' ? 'Use a passkey' : 'Use a backup code'}</button>
-        <button className="w-full text-sm text-[#6d5c4d]" type="button" onClick={() => setMode(mode === 'setup' ? 'unlock' : 'setup')}>{mode === 'setup' ? 'Cancel setup' : 'Set up this device'}</button>
+        {mode !== 'setup' ? <button className="w-full text-sm text-[#6d5c4d]" type="button" onClick={() => setMode(mode === 'backup' ? 'unlock' : 'backup')}>{mode === 'backup' ? 'Use a passkey' : 'Use a backup code'}</button> : null}
+        {mode !== 'unlock' ? <button className="w-full text-sm text-[#6d5c4d]" type="button" onClick={() => setMode(mode === 'setup' ? 'unlock' : 'setup')}>{mode === 'setup' ? 'Cancel setup' : 'Set up this device'}</button> : null}
         <Button variant="outline" className="w-full" type="button" onClick={onDemo}>Preview sample household</Button>
       </div>
     </main>
