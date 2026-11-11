@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
       - name: Build the static site
         env:
-          VITE_BASE: /ours-app/
+          VITE_BASE: /Ours-App/
           VITE_OURS_AUTH_URL: https://xalpxmeahefyocwokkyb.supabase.co/functions/v1/ours-auth
           VITE_OURS_RPC_BASE: https://xalpxmeahefyocwokkyb.supabase.co/rest/v1/rpc
           # Public Supabase publishable/anon key. Not a secret. Do not put a service-role key here.

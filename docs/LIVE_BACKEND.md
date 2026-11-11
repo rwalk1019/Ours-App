@@ -43,7 +43,7 @@ These are observations from the sanitized source. This draft does not change the
 
 ## Still required to host the static app
 
-GitHub Pages is the public origin: `https://rwalk1019.github.io/ours-app/`. The passkey RP ID is `rwalk1019.github.io` and the allowed origin is `https://rwalk1019.github.io`. Deploy `supabase/functions/ours-auth/index.ts` yourself with those values. The workflow builds with:
+GitHub Pages is the public origin: `https://rwalk1019.github.io/Ours-App/`. The passkey RP ID is `rwalk1019.github.io` and the allowed origin is `https://rwalk1019.github.io`. Deploy `supabase/functions/ours-auth/index.ts` yourself with those values. The workflow builds with:
 
 - `VITE_OURS_AUTH_URL` = `https://xalpxmeahefyocwokkyb.supabase.co/functions/v1/ours-auth`
 - `VITE_OURS_RPC_BASE` = `https://xalpxmeahefyocwokkyb.supabase.co/rest/v1/rpc`

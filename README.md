@@ -2,7 +2,7 @@
 
 Private household finance for one owner. The phone shows earnings, spending against targets you set, net worth, and this week’s tithing. It does not talk to a bank. A coordinator imports a read-only snapshot, and the screen keeps the last real balance date when a later import fails.
 
-The household Supabase project already exists. This repo does not replace its tables or its snapshot upload. The Pages site is https://rwalk1019.github.io/ours-app/ once GitHub Pages is set to GitHub Actions. See `docs/LIVE_BACKEND.md` and `docs/DEPLOYMENT.md`.
+The household Supabase project already exists. This repo does not replace its tables or its snapshot upload. The Pages site is https://rwalk1019.github.io/Ours-App/ once GitHub Pages is set to GitHub Actions. See `docs/LIVE_BACKEND.md` and `docs/DEPLOYMENT.md`.
 
 The public Supabase publishable key is set in `.github/workflows/pages.yml` as `VITE_SUPABASE_ANON_KEY`. It is not a secret. Do not put a service-role key there.
 

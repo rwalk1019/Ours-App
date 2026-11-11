@@ -2,7 +2,7 @@
 
 The live Supabase project is already the backend. Do not apply `supabase/greenfield/0001_ours.sql` to it, and do not deploy `supabase/functions/ours-api`. That entry refuses to start. Snapshot upload stays on `ours_admin_upload_snapshot`.
 
-GitHub Pages serves the static app at https://rwalk1019.github.io/ours-app/ from `.github/workflows/pages.yml`. The workflow sets the Vite base to `/ours-app/`, the auth and RPC URLs, and the public Supabase publishable key as `VITE_SUPABASE_ANON_KEY`. That key is not a secret. Do not put a service-role key there.
+GitHub Pages serves the static app at https://rwalk1019.github.io/Ours-App/ from `.github/workflows/pages.yml`. The workflow sets the Vite base to `/Ours-App/`, the auth and RPC URLs, and the public Supabase publishable key as `VITE_SUPABASE_ANON_KEY`. That key is not a secret. Do not put a service-role key there.
 
 ## Still required
 
